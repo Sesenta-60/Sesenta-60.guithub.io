@@ -1,15 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notas</title>
-    <h1>Notas</h1>
+    <title>Windows 11 - Archivos de Clase</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: url('https://images.unsplash.com/photo-1633113089631-6456cccaadad?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed; background-size: cover; user-select: none; }
+        .desktop { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        /* Window Styles */
+        .window {
+            width: 900px; height: 600px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.5);
+            animation: popIn 0.3s ease-out;
+        }
+        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .title-bar { height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .controls { display: flex; gap: 8px; }
+        .control { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+        .close { background: #ff5f57; } .min { background: #febc2e; } .max { background: #28c840; }
+        
+        .nav-bar { padding: 10px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); background: rgba(255,255,255,0.4); }
+        .nav-btn { cursor: pointer; padding: 5px 10px; border: none; background: transparent; font-size: 1.2em; border-radius: 4px; }
+        .nav-btn:hover { background: rgba(0,0,0,0.05); }
+        .path-box { font-size: 0.9em; color: #555; margin-left: 10px; }
+
+        .content { flex-grow: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; align-content: start; }
+        
+        .icon { display: flex; flex-direction: column; align-items: center; padding: 10px; border-radius: 4px; cursor: pointer; transition: background 0.2s; text-align: center; }
+        .icon:hover { background: rgba(255,255,255,0.5); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .icon-img { font-size: 48px; margin-bottom: 5px; }
+        .icon-label { font-size: 12px; word-break: break-word; color: #333; }
+
+        /* Notepad Modal */
+        .notepad-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .notepad { width: 600px; height: 400px; background: #fff; border-radius: 6px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
+        .notepad-content { flex-grow: 1; padding: 15px; font-family: 'Consolas', monospace; white-space: pre-wrap; overflow: auto; outline: none; font-size: 14px; }
+    </style>
 </head>
 <body>
-    <h1>act 1: cual crees que es una aplicacion que utilisas que dependa de estructuras de datos?</h1>
-    R: Netflix,Youtube,Spotify
-    <h1>act 2: por que crees que fueron diceñado asi?</h1>
-    R:Ya que es necesario por la forma en que actuan sus plataforma guardando gustos y todo su contenido y necesitarian una forma rapida y precisa de usar toda la informacion sin tardanzas
+    <div class="desktop">
+        <div class="window">
+            <div class="title-bar">
+                <span style="font-size: 12px;">Explorador de Archivos</span>
+                <div class="controls"><div class="control min"></div><div class="control max"></div><div class="control close"></div></div>
+            </div>
+            <div class="nav-bar">
+                <button class="nav-btn" onclick="goUp()">⬆</button>
+                <div class="path-box" id="path">Este Equipo > Clases</div>
+            </div>
+            <div class="content" id="file-view"></div>
+        </div>
+    </div>
+
+    <div class="notepad-overlay" id="notepad-overlay">
+        <div class="notepad">
+            <div class="title-bar" style="background:#f3f3f3; border-bottom:1px solid #ddd;">
+                <span id="notepad-title" style="font-size: 12px;">Bloc de notas</span>
+                <div class="controls"><div class="control close" onclick="closeNotepad()"></div></div>
+            </div>
+            <div class="notepad-content" id="notepad-text"></div>
+        </div>
+    </div>
+
+    <script>
+        const fileSystem = {
+            name: "root",
+            type: "folder",
+            children: []
+        };
+
+        for (let i = 1; i <= 10; i++) {
+            let files = [];
+            if (i === 1) {
+                files.push({ name: "actividad_1.txt", type: "file", content: "Act 1: ¿Cuál crees que es una aplicación que utilizas que dependa de estructuras de datos?\n\nR: Netflix, Youtube, Spotify" });
+                files.push({ name: "actividad_2.txt", type: "file", content: "Act 2: ¿Por qué crees que fueron diseñados así?\n\nR: Ya que es necesario por la forma en que actúan sus plataformas guardando gustos y todo su contenido y necesitarían una forma rápida y precisa de usar toda la información sin tardanzas." });
+            } else {
+                files.push({ name: "preguntas.txt", type: "file", content: "Pregunta: ¿Qué tema se vio en la clase " + i + "?\n\nR: [Respuesta pendiente]" });
+            }
+            fileSystem.children.push({ name: "Clase " + i, type: "folder", children: files });
+        }
+
+        let currentDir = fileSystem;
+        let pathStack = [];
+
+        function render() {
+            const view = document.getElementById('file-view');
+            view.innerHTML = '';
+            document.getElementById('path').innerText = currentDir === fileSystem ? "Este Equipo > Clases" : "Este Equipo > Clases > " + currentDir.name;
+
+            currentDir.children.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'icon';
+                el.onclick = () => openItem(item);
+                el.innerHTML = `
+                    <div class="icon-img" style="color: ${item.type === 'folder' ? '#ffe680' : '#89cff0'}">${item.type === 'folder' ? '📁' : '📄'}</div>
+                    <div class="icon-label">${item.name}</div>
+                `;
+                view.appendChild(el);
+            });
+        }
+
+        function openItem(item) {
+            if (item.type === 'folder') {
+                pathStack.push(currentDir);
+                currentDir = item;
+                render();
+            } else {
+                document.getElementById('notepad-title').innerText = item.name + " - Bloc de notas";
+                document.getElementById('notepad-text').innerText = item.content;
+                document.getElementById('notepad-overlay').style.display = 'flex';
+            }
+        }
+
+        function goUp() {
+            if (pathStack.length > 0) {
+                currentDir = pathStack.pop();
+                render();
+            }
+        }
+
+        function closeNotepad() { document.getElementById('notepad-overlay').style.display = 'none'; }
+        render();
+    </script>
 </body>
 </html>
